@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>在庫管理</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <h1>在庫管理</h1>
+        <button id="add-btn" class="icon-btn" aria-label="新規追加">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+    </header>
+
+    <main class="container">
+        <!-- 一覧画面 -->
+        <section id="list-view" class="view active">
+            <div class="search-container">
+                <div class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <input type="text" id="search-input" placeholder="物品名で検索...">
+            </div>
+            <div id="item-list" class="item-list">
+                <!-- アイテムがここに動的に追加される -->
+            </div>
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <p>アイテムがありません。<br>右上の＋ボタンから追加してください。</p>
+            </div>
+        </section>
+
+        <!-- 登録・編集画面 -->
+        <section id="form-view" class="view">
+            <form id="item-form" class="form">
+                <input type="hidden" id="item-id">
+                
+                <div class="form-group image-upload-group">
+                    <label for="item-image-input" class="image-preview-label">
+                        <div id="image-preview" class="image-preview">
+                            <span class="placeholder-text">📷 写真を追加</span>
+                        </div>
+                    </label>
+                    <input type="file" id="item-image-input" accept="image/*" capture="environment" style="display: none;">
+                    <button type="button" id="remove-image-btn" class="btn-text danger" style="display: none;">画像を削除</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="item-name">物品名 *</label>
+                    <input type="text" id="item-name" required placeholder="例: 予備バッテリー">
+                </div>
+
+                <div class="form-group">
+                    <label for="item-location">保管場所</label>
+                    <input type="text" id="item-location" placeholder="例: 棚A-3">
+                </div>
+
+                <div class="form-group">
+                    <label for="item-category">カテゴリ</label>
+                    <input type="text" id="item-category" placeholder="例: 消耗品">
+                </div>
+
+                <div class="form-group">
+                    <label for="item-status">状態</label>
+                    <select id="item-status">
+                        <option value="良好">良好</option>
+                        <option value="使用中">使用中</option>
+                        <option value="修理必要">修理必要</option>
+                        <option value="破棄待ち">破棄待ち</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="item-notes">備考</label>
+                    <textarea id="item-notes" rows="3" placeholder="特記事項があれば入力"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn btn-secondary">キャンセル</button>
+                    <button type="submit" id="save-btn" class="btn btn-primary">保存する</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- モーダル用オーバーレイ (削除確認など) -->
+    <div id="modal-overlay" class="overlay">
+        <div class="modal">
+            <h3 id="modal-title">確認</h3>
+            <p id="modal-message">本当に削除しますか？</p>
+            <div class="modal-actions">
+                <button id="modal-cancel" class="btn btn-secondary">キャンセル</button>
+                <button id="modal-confirm" class="btn btn-danger">削除</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
