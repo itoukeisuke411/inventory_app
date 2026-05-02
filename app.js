@@ -349,21 +349,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!Array.isArray(data)) throw new Error('Invalid format');
                     dataToImport = data;
                 } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
-                    // 簡単なCSVパーサー (カンマ区切り)
-                    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
-                    if (lines.length < 2) throw new Error('No data found');
+                    const parsedLines = parseCSV(content);
+                    if (parsedLines.length < 2) throw new Error('No data found');
                     
                     // 1行目はヘッダーとしてスキップし、2行目から読み込む
                     // 想定: 物品名,保管場所,カテゴリ,状態,備考
-                    for (let i = 1; i < lines.length; i++) {
-                        const cols = lines[i].split(',').map(c => c.trim());
-                        if (cols.length >= 1 && cols[0] !== '') {
+                    for (let i = 1; i < parsedLines.length; i++) {
+                        const cols = parsedLines[i];
+                        if (cols.length >= 1 && cols[0].trim() !== '') {
                             dataToImport.push({
-                                name: cols[0],
-                                location: cols[1] || '',
-                                category: cols[2] || '',
-                                status: cols[3] || '良好',
-                                notes: cols[4] || '',
+                                name: cols[0].trim(),
+                                location: cols[1] ? cols[1].trim() : '',
+                                category: cols[2] ? cols[2].trim() : '',
+                                status: cols[3] ? cols[3].trim() : '良好',
+                                notes: cols[4] ? cols[4].trim() : '',
                                 image: null // テキストからのインポート時は画像なし
                             });
                         }
@@ -405,6 +404,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Utility
+    function parseCSV(text) {
+        const result = [];
+        let currentLine = [];
+        let currentCell = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            const nextC = text[i + 1];
+            
+            if (inQuotes) {
+                if (c === '"' && nextC === '"') {
+                    currentCell += '"';
+                    i++;
+                } else if (c === '"') {
+                    inQuotes = false;
+                } else {
+                    currentCell += c;
+                }
+            } else {
+                if (c === '"') {
+                    inQuotes = true;
+                } else if (c === ',') {
+                    currentLine.push(currentCell);
+                    currentCell = '';
+                } else if (c === '\n' || (c === '\r' && nextC === '\n')) {
+                    if (c === '\r') i++;
+                    currentLine.push(currentCell);
+                    result.push(currentLine);
+                    currentLine = [];
+                    currentCell = '';
+                } else {
+                    currentCell += c;
+                }
+            }
+        }
+        if (currentCell !== '' || currentLine.length > 0) {
+            currentLine.push(currentCell);
+            result.push(currentLine);
+        }
+        return result.filter(line => line.some(cell => cell.trim() !== ''));
+    }
+
     function escapeHtml(unsafe) {
         return (unsafe || '').replace(/[&<"'>]/g, function (match) {
             switch (match) {
