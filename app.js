@@ -336,22 +336,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) return;
         
+        const fileName = file.name.toLowerCase();
         const reader = new FileReader();
+        
         reader.onload = async (event) => {
             try {
-                const data = JSON.parse(event.target.result);
-                if (!Array.isArray(data)) throw new Error('Invalid format');
+                let dataToImport = [];
+                const content = event.target.result;
                 
-                if (confirm('現在のデータを上書きしますか？（すべてのデータが置き換わります）')) {
-                    await clearItems();
-                    for (const item of data) {
+                if (fileName.endsWith('.json')) {
+                    const data = JSON.parse(content);
+                    if (!Array.isArray(data)) throw new Error('Invalid format');
+                    dataToImport = data;
+                } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+                    // 簡単なCSVパーサー (カンマ区切り)
+                    const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                    if (lines.length < 2) throw new Error('No data found');
+                    
+                    // 1行目はヘッダーとしてスキップし、2行目から読み込む
+                    // 想定: 物品名,保管場所,カテゴリ,状態,備考
+                    for (let i = 1; i < lines.length; i++) {
+                        const cols = lines[i].split(',').map(c => c.trim());
+                        if (cols.length >= 1 && cols[0] !== '') {
+                            dataToImport.push({
+                                name: cols[0],
+                                location: cols[1] || '',
+                                category: cols[2] || '',
+                                status: cols[3] || '良好',
+                                notes: cols[4] || '',
+                                image: null // テキストからのインポート時は画像なし
+                            });
+                        }
+                    }
+                } else {
+                    throw new Error('Unsupported file type');
+                }
+                
+                if (dataToImport.length > 0) {
+                    const overwrite = confirm('現在のデータをすべて削除して「上書き」しますか？\n\n[OK] = 上書きする\n[キャンセル] = 現在のデータに「追加」する');
+                    if (overwrite) {
+                        await clearItems();
+                    }
+                    
+                    for (const item of dataToImport) {
                         await saveItem(item);
                     }
-                    alert('インポートが完了しました。');
+                    alert(`${dataToImport.length}件のアイテムをインポートしました。`);
                     loadList();
+                } else {
+                    alert('インポートするデータがありませんでした。');
                 }
             } catch (err) {
-                alert('ファイルの読み込みに失敗しました。正しいバックアップファイルを選択してください。');
+                alert('ファイルの読み込みに失敗しました。正しい形式（ひな形通り）のファイルを選択してください。');
+                console.error(err);
             }
             importInput.value = ''; // reset
         };
