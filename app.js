@@ -69,6 +69,17 @@ async function deleteItem(id) {
     });
 }
 
+async function clearItems() {
+    const db = await initDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.clear();
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}
+
 // --- Image Compression & Base64 ---
 function compressImage(file, maxWidth = 800) {
     return new Promise((resolve) => {
@@ -102,6 +113,8 @@ function compressImage(file, maxWidth = 800) {
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const searchInput = document.getElementById('search-input');
+    const exportBtn = document.getElementById('export-btn');
+    const importInput = document.getElementById('import-input');
     const listView = document.getElementById('list-view');
     const formView = document.getElementById('form-view');
     const itemListEl = document.getElementById('item-list');
@@ -303,6 +316,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Event Listeners
+    exportBtn.addEventListener('click', async () => {
+        try {
+            const items = await getItems();
+            const dataStr = JSON.stringify(items);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventory_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('エクスポートに失敗しました。');
+        }
+    });
+
+    importInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (!Array.isArray(data)) throw new Error('Invalid format');
+                
+                if (confirm('現在のデータを上書きしますか？（すべてのデータが置き換わります）')) {
+                    await clearItems();
+                    for (const item of data) {
+                        await saveItem(item);
+                    }
+                    alert('インポートが完了しました。');
+                    loadList();
+                }
+            } catch (err) {
+                alert('ファイルの読み込みに失敗しました。正しいバックアップファイルを選択してください。');
+            }
+            importInput.value = ''; // reset
+        };
+        reader.readAsText(file);
+    });
+
     addBtn.addEventListener('click', () => {
         resetForm();
         showView('form-view');

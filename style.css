@@ -318,6 +318,19 @@ body {
     color: #fff;
 }
 
+.btn-sm {
+    padding: 10px;
+    font-size: 14px;
+}
+
+.data-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
 /* Modal */
 .overlay {
     position: fixed;
